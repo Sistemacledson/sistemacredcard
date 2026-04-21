@@ -1,9 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Search, Save, Check, ShieldAlert, RotateCw, List, User, LayoutDashboard, Plus, Edit2, Calendar, Trash2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Search, Save, Check, RotateCw, List, User, LayoutDashboard, Plus, Edit2, Calendar, Trash2, ChevronDown, ChevronUp, AlertTriangle, LogIn, LogOut, Eye, EyeOff } from 'lucide-react';
 import { formatCPFCNPJ, isValidDocument, formatDate } from '../utils/formatters';
 import { getProcessosByDocumento, saveProcessos, saveProcessosEmMassa, orgaosList, statusList, etapasList, getAllClientes, deleteProcessoByDocumento, getClientesByData, updateProcessosByData } from '../services/processService';
+import { supabase } from '../lib/supabase';
 
 const AdminArea = () => {
+  // Auth
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'cadastrar' | 'editar'
   const [cadastrarModo, setCadastrarModo] = useState('manual'); // 'manual' | 'massa'
   
@@ -41,6 +51,31 @@ const AdminArea = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+
+  // Auth: verificar sessão
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    setLoginLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
+    setLoginLoading(false);
+    if (error) setLoginError('E-mail ou senha incorretos.');
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
   // Carregar Dashboard ao montar
   useEffect(() => {
@@ -248,6 +283,78 @@ const AdminArea = () => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <RotateCw className="spinner" size={32} style={{ color: 'var(--text-muted)' }} />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>
+        <div style={{ background: '#fff', borderRadius: '1rem', padding: '2.5rem', width: '100%', maxWidth: '400px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid var(--border-color)' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <img src="/logoacred.webp" alt="Acredcard Logo" style={{ height: '48px', marginBottom: '1.25rem' }} />
+            <h1 style={{ fontSize: '1.375rem', fontWeight: 700, marginBottom: '0.375rem' }}>Área Administrativa</h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Acesso restrito. Faça login para continuar.</p>
+          </div>
+
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+            <div className="input-group">
+              <label className="input-label" htmlFor="loginEmail">E-mail</label>
+              <input
+                id="loginEmail"
+                type="email"
+                className="input-field"
+                placeholder="seu@email.com"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label" htmlFor="loginPassword">Senha</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="loginPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  className="input-field"
+                  placeholder="••••••••"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  required
+                  style={{ paddingRight: '3rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex' }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {loginError && (
+              <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', backgroundColor: '#FEF2F2', color: '#991B1B', border: '1px solid #FECACA', fontSize: '0.875rem' }}>
+                {loginError}
+              </div>
+            )}
+
+            <button type="submit" className="btn-primary" disabled={loginLoading} style={{ justifyContent: 'center', marginTop: '0.25rem' }}>
+              {loginLoading ? <RotateCw className="spinner" size={18} /> : <LogIn size={18} />}
+              {loginLoading ? 'Entrando...' : 'Entrar'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <header className="header">
@@ -303,7 +410,12 @@ const AdminArea = () => {
 
       <div className="admin-header">
         <h1 style={{ textAlign: 'left', marginBottom: 0 }}>Área Administrativa</h1>
-        <ShieldAlert size={24} style={{ color: 'var(--text-muted)' }} />
+        <button
+          onClick={handleLogout}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: '1px solid var(--border-color)', borderRadius: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.875rem' }}
+        >
+          <LogOut size={16} /> Sair
+        </button>
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)' }}>
