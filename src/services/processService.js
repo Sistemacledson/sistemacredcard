@@ -179,8 +179,8 @@ export const getAllClientes = async () => {
   try {
     const { data, error } = await supabase
       .from('processos')
-      .select('documento, atualizado_em, nome_cliente, etapa')
-      .order('atualizado_em', { ascending: false });
+      .select('documento, atualizado_em, nome_cliente, etapa, data_inicio')
+      .order('data_inicio', { ascending: false, nullsFirst: false });
 
     if (error) {
       console.error('Erro ao buscar todos os clientes:', error);
@@ -194,14 +194,14 @@ export const getAllClientes = async () => {
     if (data) {
       data.forEach(item => {
         if (!clientesMap.has(item.documento)) {
-          clientesMap.set(item.documento, { atualizado_em: item.atualizado_em, nome: item.nome_cliente, etapa: item.etapa });
+          clientesMap.set(item.documento, { atualizado_em: item.atualizado_em, nome: item.nome_cliente, etapa: item.etapa, data_inicio: item.data_inicio });
         } else {
           // Se já existe, checa se essa data é mais recente
           const existingDate = new Date(clientesMap.get(item.documento).atualizado_em);
           const newDate = new Date(item.atualizado_em);
           if (isNaN(newDate.getTime())) return; // ignorar se for invalida
           if (isNaN(existingDate.getTime()) || newDate > existingDate) {
-            clientesMap.set(item.documento, { atualizado_em: item.atualizado_em, nome: item.nome_cliente, etapa: item.etapa });
+            clientesMap.set(item.documento, { atualizado_em: item.atualizado_em, nome: item.nome_cliente, etapa: item.etapa, data_inicio: item.data_inicio });
           }
         }
       });
@@ -213,11 +213,17 @@ export const getAllClientes = async () => {
       documento,
       atualizado_em: valores.atualizado_em,
       nome_cliente: valores.nome,
-      etapa: valores.etapa
+      etapa: valores.etapa,
+      data_inicio: valores.data_inicio
     }));
 
-    // Ordenar do mais recente para o mais antigo
-    return clientesUnicos.sort((a, b) => new Date(b.atualizado_em) - new Date(a.atualizado_em));
+    // Ordenar do mais recente para o mais antigo por data_inicio
+    return clientesUnicos.sort((a, b) => {
+      if (!a.data_inicio && !b.data_inicio) return 0;
+      if (!a.data_inicio) return 1;
+      if (!b.data_inicio) return -1;
+      return new Date(b.data_inicio) - new Date(a.data_inicio);
+    });
 
   } catch (error) {
     console.error('Erro inesperado:', error);

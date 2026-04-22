@@ -96,15 +96,15 @@ const AdminArea = () => {
     setLoadingDashboard(true);
     const clientes = await getAllClientes();
     
-    // Agrupar por Mês/Ano
+    // Agrupar por Mês/Ano da data de início
     const agrupado = {};
     clientes.forEach(c => {
-      if (!c.atualizado_em) return;
-      const dataObj = new Date(c.atualizado_em);
-      // Pega o nome do mês e ano
+      const dataRef = c.data_inicio || c.atualizado_em;
+      if (!dataRef) return;
+      const dataObj = new Date(dataRef);
       const mesAno = dataObj.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
       const mesAnoFormatado = mesAno.charAt(0).toUpperCase() + mesAno.slice(1);
-      
+
       if (!agrupado[mesAnoFormatado]) {
         agrupado[mesAnoFormatado] = [];
       }
@@ -638,7 +638,7 @@ const AdminArea = () => {
                                 </div>
                               )}
                               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                                Última atualização: {formatDate(cliente.atualizado_em)}
+                                {cliente.data_inicio ? `Início do processo: ${formatDate(cliente.data_inicio)}` : `Última atualização: ${formatDate(cliente.atualizado_em)}`}
                               </div>
                             </div>
                             
