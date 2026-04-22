@@ -33,6 +33,7 @@ const AdminArea = () => {
   const [processosEditaveis, setProcessosEditaveis] = useState([]);
   const [etapaProcesso, setEtapaProcesso] = useState('');
   const [dataInicioProcesso, setDataInicioProcesso] = useState('');
+  const [observacaoProcesso, setObservacaoProcesso] = useState('');
 
   // Estados para Inserção em Massa
   const [listaMassa, setListaMassa] = useState('');
@@ -147,6 +148,9 @@ const AdminArea = () => {
     const dataInicioExistente = (dadosBanco && dadosBanco.length > 0 && dadosBanco[0].data_inicio) ? dadosBanco[0].data_inicio : '';
     setDataInicioProcesso(dataInicioExistente);
 
+    const observacaoExistente = (dadosBanco && dadosBanco.length > 0 && dadosBanco[0].observacao) ? dadosBanco[0].observacao : '';
+    setObservacaoProcesso(observacaoExistente);
+
     const editaveis = orgaosList.map(orgao => {
       const orgaoExistente = dadosBanco?.find(p => p.orgao === orgao);
       return {
@@ -212,7 +216,8 @@ const AdminArea = () => {
       ...p,
       nome_cliente: nomeClienteBusca,
       etapa: etapaProcesso,
-      data_inicio: dataInicioProcesso || null
+      data_inicio: dataInicioProcesso || null,
+      observacao: observacaoProcesso || null
     }));
 
     const success = await saveProcessos(clienteAtual, processosComNome);
@@ -935,6 +940,21 @@ const AdminArea = () => {
                 className="input-field"
                 value={dataInicioProcesso}
                 onChange={(e) => setDataInicioProcesso(e.target.value)}
+              />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label" htmlFor="observacaoEdit">
+                Observação Interna
+              </label>
+              <textarea
+                id="observacaoEdit"
+                className="input-field"
+                placeholder="Anotações internas sobre o cliente ou processo (não visível ao cliente)"
+                value={observacaoProcesso}
+                onChange={(e) => setObservacaoProcesso(e.target.value)}
+                rows={3}
+                style={{ resize: 'vertical' }}
               />
             </div>
           </div>

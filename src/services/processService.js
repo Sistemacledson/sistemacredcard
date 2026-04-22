@@ -103,7 +103,8 @@ export const saveProcessos = async (documento, processos) => {
       status: p.status,
       atualizado_em: p.atualizado_em,
       etapa: p.etapa || '01 – Início Jurídico do Processo',
-      data_inicio: p.data_inicio || null
+      data_inicio: p.data_inicio || null,
+      observacao: p.observacao || null
     }));
 
     const { error: insertError } = await supabase
