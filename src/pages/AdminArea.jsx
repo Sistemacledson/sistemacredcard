@@ -43,6 +43,11 @@ const AdminArea = () => {
   const [dataInicioMassa, setDataInicioMassa] = useState('');
 
   // Estados para Atualização em Lote por Data
+  // Estados para Busca
+  const [termoBusca, setTermoBusca] = useState('');
+  const [resultadoBusca, setResultadoBusca] = useState(null);
+  const [loadingBusca, setLoadingBusca] = useState(false);
+
   const [dataLote, setDataLote] = useState('');
   const [clientesLote, setClientesLote] = useState(null);
   const [loadingLote, setLoadingLote] = useState(false);
@@ -258,6 +263,20 @@ const AdminArea = () => {
   };
 
   // === LÓGICA: ATUALIZAÇÃO EM LOTE POR DATA ===
+  const handleBuscarCliente = async (e) => {
+    e.preventDefault();
+    if (!termoBusca.trim()) return;
+    setLoadingBusca(true);
+    setResultadoBusca(null);
+    const data = await getProcessosByDocumento(termoBusca);
+    setLoadingBusca(false);
+    if (!data || data.length === 0) {
+      setResultadoBusca([]);
+    } else {
+      setResultadoBusca(data);
+    }
+  };
+
   const handleBuscarPorData = async () => {
     if (!dataLote) return;
     setLoadingLote(true);
@@ -483,6 +502,24 @@ const AdminArea = () => {
           }}
         >
           <Edit2 size={18} /> Atualizar em Lote
+        </button>
+        <button
+          onClick={() => { setActiveTab('buscar'); setMessage({ text: '', type: '' }); setTermoBusca(''); setResultadoBusca(null); }}
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'buscar' ? '2px solid var(--primary-color)' : '2px solid transparent',
+            color: activeTab === 'buscar' ? 'var(--primary-color)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'buscar' ? 600 : 400,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '1rem'
+          }}
+        >
+          <Search size={18} /> Buscar Cliente
         </button>
         {activeTab === 'editar' && (
           <button 
@@ -880,6 +917,89 @@ const AdminArea = () => {
                 </>
               )}
             </>
+          )}
+        </div>
+      )}
+
+      {/* ABA BUSCAR CLIENTE */}
+      {activeTab === 'buscar' && (
+        <div style={{ animation: 'fadeIn 0.3s ease' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Buscar Cliente</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+            Digite o CPF ou CNPJ para localizar um cliente cadastrado.
+          </p>
+
+          <form onSubmit={handleBuscarCliente} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', maxWidth: '520px', marginBottom: '2rem' }}>
+            <div className="input-group" style={{ flex: 1 }}>
+              <label className="input-label">CPF ou CNPJ</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="000.000.000-00"
+                value={termoBusca}
+                onChange={(e) => setTermoBusca(formatCPFCNPJ(e.target.value))}
+                maxLength={18}
+                autoFocus
+              />
+            </div>
+            <button type="submit" className="btn-primary" disabled={!termoBusca || loadingBusca}>
+              {loadingBusca ? <RotateCw className="spinner" size={18} /> : <Search size={18} />}
+              Buscar
+            </button>
+          </form>
+
+          {resultadoBusca !== null && (
+            resultadoBusca.length === 0 ? (
+              <div className="empty-state">
+                <Search size={40} style={{ margin: '0 auto 1rem', color: '#9CA3AF' }} />
+                <p>Nenhum cliente encontrado para este documento.</p>
+              </div>
+            ) : (
+              <div style={{ maxWidth: '520px' }}>
+                <div style={{
+                  background: '#F9FAFB',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '0.75rem',
+                  padding: '1.25rem 1.5rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--text-main)' }}>
+                      {resultadoBusca[0].nome_cliente || formatCPFCNPJ(resultadoBusca[0].documento)}
+                    </div>
+                    {resultadoBusca[0].nome_cliente && (
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                        {formatCPFCNPJ(resultadoBusca[0].documento)}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.8rem', color: 'var(--primary-color)', marginTop: '0.35rem' }}>
+                      {resultadoBusca[0].etapa}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      Última atualização: {formatDate(resultadoBusca[0].atualizado_em)}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => handleEditClick(resultadoBusca[0].documento)}
+                      style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: '0.375rem', padding: '0.5rem', cursor: 'pointer', color: 'var(--primary-color)', display: 'flex' }}
+                      title="Editar"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      onClick={() => setClienteParaExcluir(resultadoBusca[0].documento)}
+                      style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: '0.375rem', padding: '0.5rem', cursor: 'pointer', color: '#EF4444', display: 'flex' }}
+                      title="Excluir"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
           )}
         </div>
       )}
