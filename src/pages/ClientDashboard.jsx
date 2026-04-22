@@ -102,6 +102,7 @@ const ClientDashboard = () => {
   };
 
   const etapaAtual = (resultados && resultados.length > 0) ? (resultados[0].etapa || '01 – Início Jurídico do Processo') : null;
+  const dataInicio = (resultados && resultados.length > 0 && resultados[0].data_inicio) ? formatDate(resultados[0].data_inicio) : null;
 
   return (
     <>
@@ -211,6 +212,12 @@ const ClientDashboard = () => {
                     <p className="etapa-description">
                       {descricoesEtapa[etapaAtual] || 'Processo em andamento.'}
                     </p>
+                    {dataInicio && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.875rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>calendar_today</span>
+                        Processo iniciado em: <strong>{dataInicio}</strong>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

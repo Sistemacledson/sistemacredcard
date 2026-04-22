@@ -32,12 +32,14 @@ const AdminArea = () => {
   const [clienteAtual, setClienteAtual] = useState(null);
   const [processosEditaveis, setProcessosEditaveis] = useState([]);
   const [etapaProcesso, setEtapaProcesso] = useState('');
-  
+  const [dataInicioProcesso, setDataInicioProcesso] = useState('');
+
   // Estados para Inserção em Massa
   const [listaMassa, setListaMassa] = useState('');
   const [statusMassa, setStatusMassa] = useState(statusList[0]);
   const [dataMassa, setDataMassa] = useState(new Date().toISOString().split('T')[0]);
   const [etapaMassa, setEtapaMassa] = useState(etapasList[0]);
+  const [dataInicioMassa, setDataInicioMassa] = useState('');
 
   // Estados para Atualização em Lote por Data
   const [dataLote, setDataLote] = useState('');
@@ -142,6 +144,9 @@ const AdminArea = () => {
     const etapaExistente = (dadosBanco && dadosBanco.length > 0 && dadosBanco[0].etapa) ? dadosBanco[0].etapa : etapasList[0];
     setEtapaProcesso(etapaExistente);
 
+    const dataInicioExistente = (dadosBanco && dadosBanco.length > 0 && dadosBanco[0].data_inicio) ? dadosBanco[0].data_inicio : '';
+    setDataInicioProcesso(dataInicioExistente);
+
     const editaveis = orgaosList.map(orgao => {
       const orgaoExistente = dadosBanco?.find(p => p.orgao === orgao);
       return {
@@ -206,7 +211,8 @@ const AdminArea = () => {
     const processosComNome = processosEditaveis.map(p => ({
       ...p,
       nome_cliente: nomeClienteBusca,
-      etapa: etapaProcesso
+      etapa: etapaProcesso,
+      data_inicio: dataInicioProcesso || null
     }));
 
     const success = await saveProcessos(clienteAtual, processosComNome);
@@ -234,7 +240,7 @@ const AdminArea = () => {
     // Divide a string por quebras de linha e remove linhas vazias
     const documentosArray = listaMassa.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     
-    const success = await saveProcessosEmMassa(documentosArray, statusMassa, dataMassa, etapaMassa);
+    const success = await saveProcessosEmMassa(documentosArray, statusMassa, dataMassa, etapaMassa, dataInicioMassa || null);
 
     setSaving(false);
 
@@ -727,11 +733,20 @@ const AdminArea = () => {
                 
                 <div className="input-group">
                   <label className="input-label">Data de Atualização</label>
-                  <input 
+                  <input
                     type="date"
                     className="input-field"
                     value={dataMassa}
                     onChange={(e) => setDataMassa(e.target.value)}
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Data de Início do Processo</label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={dataInicioMassa}
+                    onChange={(e) => setDataInicioMassa(e.target.value)}
                   />
                 </div>
               </div>
@@ -886,7 +901,7 @@ const AdminArea = () => {
               <label className="input-label" htmlFor="etapaGlobal">
                 Etapa Global do Processo
               </label>
-              <select 
+              <select
                 id="etapaGlobal"
                 className="select-field"
                 value={etapaProcesso}
@@ -896,6 +911,19 @@ const AdminArea = () => {
                   <option key={etapa} value={etapa}>{etapa}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="input-group">
+              <label className="input-label" htmlFor="dataInicioEdit">
+                Data de Início do Processo
+              </label>
+              <input
+                id="dataInicioEdit"
+                type="date"
+                className="input-field"
+                value={dataInicioProcesso}
+                onChange={(e) => setDataInicioProcesso(e.target.value)}
+              />
             </div>
           </div>
           

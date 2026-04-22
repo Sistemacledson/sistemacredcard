@@ -102,7 +102,8 @@ export const saveProcessos = async (documento, processos) => {
       orgao: p.orgao,
       status: p.status,
       atualizado_em: p.atualizado_em,
-      etapa: p.etapa || '01 – Início Jurídico do Processo'
+      etapa: p.etapa || '01 – Início Jurídico do Processo',
+      data_inicio: p.data_inicio || null
     }));
 
     const { error: insertError } = await supabase
@@ -122,7 +123,7 @@ export const saveProcessos = async (documento, processos) => {
 };
 
 // Salva processos em massa para uma lista de documentos
-export const saveProcessosEmMassa = async (listaDocumentos, status, atualizado_em, etapa = '01 – Início Jurídico do Processo') => {
+export const saveProcessosEmMassa = async (listaDocumentos, status, atualizado_em, etapa = '01 – Início Jurídico do Processo', data_inicio = null) => {
   try {
     const documentosLimpos = listaDocumentos.map(doc => cleanDocument(doc)).filter(doc => doc.length === 11 || doc.length === 14);
     
@@ -148,7 +149,8 @@ export const saveProcessosEmMassa = async (listaDocumentos, status, atualizado_e
           orgao: orgao,
           status: status,
           atualizado_em: atualizado_em,
-          etapa: etapa
+          etapa: etapa,
+          data_inicio: data_inicio
         });
       });
     });
