@@ -673,7 +673,7 @@ const AdminArea = () => {
                   onChange={(e) => setNomeClienteBusca(e.target.value)}
                 />
               </div>
-              <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+              <div className="input-group" style={{ marginBottom: '1rem' }}>
                 <label className="input-label" htmlFor="docCadastro">
                   CPF ou CNPJ do Cliente <span style={{ color: '#EF4444' }}>*</span>
                 </label>
@@ -687,9 +687,21 @@ const AdminArea = () => {
                   maxLength={18}
                 />
               </div>
-              <button 
-                className="btn-primary" 
-                onClick={handleCadastrarUnico} 
+              <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                <label className="input-label" htmlFor="dataInicioCadastro">
+                  Data de Início do Processo
+                </label>
+                <input
+                  id="dataInicioCadastro"
+                  type="date"
+                  className="input-field"
+                  value={dataInicioProcesso}
+                  onChange={(e) => setDataInicioProcesso(e.target.value)}
+                />
+              </div>
+              <button
+                className="btn-primary"
+                onClick={handleCadastrarUnico}
                 style={{ width: '100%' }}
               >
                 Prosseguir para Configuração <Search size={18} style={{ marginLeft: '0.5rem' }} />
