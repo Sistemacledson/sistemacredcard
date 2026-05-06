@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, RotateCw, AlertCircle } from 'lucide-react';
 import { formatCPFCNPJ, isValidDocument, formatDate } from '../utils/formatters';
-import { getProcessosByDocumento, orgaosList } from '../services/processService';
+import { getProcessosByDocumento, orgaosList, etapasList } from '../services/processService';
 
 const ClientDashboard = () => {
   const [documento, setDocumento] = useState('');
@@ -194,6 +194,32 @@ const ClientDashboard = () => {
             </div>
           ) : (
             <>
+              {/* Stepper visual de progresso */}
+              {etapaAtual && (() => {
+                const etapaNum = parseInt(etapaAtual.split('–')[0].trim(), 10);
+                return (
+                  <div className="process-stepper">
+                    {etapasList.map((etapa, idx) => {
+                      const num = idx + 1;
+                      const isCompleted = num < etapaNum;
+                      const isCurrent = num === etapaNum;
+                      const shortLabel = etapa.split('–')[1]?.trim() || etapa;
+                      return (
+                        <div key={etapa} className={`step-item${isCompleted ? ' completed' : ''}${isCurrent ? ' current' : ''}`}>
+                          <div className="step-circle">
+                            {isCompleted
+                              ? <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', fontVariationSettings: "'FILL' 1" }}>check</span>
+                              : num
+                            }
+                          </div>
+                          <div className="step-label">{shortLabel}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
               {/* Visualização da Etapa */}
               {etapaAtual && (
                 <div className="etapa-card">
@@ -252,9 +278,9 @@ const ClientDashboard = () => {
                       </p>
                       
                       <div className="card-date-novo">
-                        <span className="material-symbols-outlined" style={{ fontSize: '0.875rem' }}>schedule</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: '0.875rem' }}>update</span>
                         <span className="date-text-novo">
-                          Atualizado em: {dataAtualizacaoStr}
+                          Última atualização: <strong>{dataAtualizacaoStr}</strong>
                         </span>
                       </div>
                     </div>

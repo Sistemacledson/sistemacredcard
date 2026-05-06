@@ -231,13 +231,16 @@ export const getAllClientes = async () => {
   }
 };
 
-// Busca clientes únicos por data de atualização (para preview do lote)
-export const getClientesByData = async (date) => {
+// Busca clientes únicos por data ou intervalo de datas (para preview do lote)
+export const getClientesByData = async (dateInicio, dateFim = null) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('processos')
       .select('documento, nome_cliente, etapa')
-      .eq('atualizado_em', date);
+      .gte('atualizado_em', dateInicio)
+      .lte('atualizado_em', dateFim || dateInicio);
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Erro ao buscar clientes por data:', error);
@@ -251,15 +254,21 @@ export const getClientesByData = async (date) => {
       }
     });
 
-    return Array.from(map.values());
+    const result = Array.from(map.values());
+    result.sort((a, b) => {
+      const nameA = (a.nome_cliente || a.documento).toLowerCase();
+      const nameB = (b.nome_cliente || b.documento).toLowerCase();
+      return nameA.localeCompare(nameB, 'pt-BR');
+    });
+    return result;
   } catch (error) {
     console.error('Erro inesperado:', error);
     return [];
   }
 };
 
-// Atualiza status e/ou etapa de todos os processos de uma data específica
-export const updateProcessosByData = async (date, updates) => {
+// Atualiza status e/ou etapa de todos os processos de um intervalo de datas
+export const updateProcessosByData = async (dateInicio, dateFim = null, updates) => {
   try {
     const payload = {};
     if (updates.status) payload.status = updates.status;
@@ -271,7 +280,8 @@ export const updateProcessosByData = async (date, updates) => {
     const { error } = await supabase
       .from('processos')
       .update(payload)
-      .eq('atualizado_em', date);
+      .gte('atualizado_em', dateInicio)
+      .lte('atualizado_em', dateFim || dateInicio);
 
     if (error) {
       console.error('Erro ao atualizar em lote:', error);

@@ -48,7 +48,8 @@ const AdminArea = () => {
   const [resultadoBusca, setResultadoBusca] = useState(null);
   const [loadingBusca, setLoadingBusca] = useState(false);
 
-  const [dataLote, setDataLote] = useState('');
+  const [dataLoteInicio, setDataLoteInicio] = useState('');
+  const [dataLoteFim, setDataLoteFim] = useState('');
   const [clientesLote, setClientesLote] = useState(null);
   const [loadingLote, setLoadingLote] = useState(false);
   const [statusLote, setStatusLote] = useState('');
@@ -95,7 +96,7 @@ const AdminArea = () => {
   const loadDashboard = async () => {
     setLoadingDashboard(true);
     const clientes = await getAllClientes();
-    
+
     // Agrupar por Mês/Ano da data de início
     const agrupado = {};
     clientes.forEach(c => {
@@ -109,6 +110,15 @@ const AdminArea = () => {
         agrupado[mesAnoFormatado] = [];
       }
       agrupado[mesAnoFormatado].push(c);
+    });
+
+    // Ordenar clientes de cada mês em ordem alfabética pelo nome
+    Object.keys(agrupado).forEach(key => {
+      agrupado[key].sort((a, b) => {
+        const nameA = (a.nome_cliente || a.documento).toLowerCase();
+        const nameB = (b.nome_cliente || b.documento).toLowerCase();
+        return nameA.localeCompare(nameB, 'pt-BR');
+      });
     });
 
     setDashboardData(agrupado);
@@ -278,16 +288,16 @@ const AdminArea = () => {
   };
 
   const handleBuscarPorData = async () => {
-    if (!dataLote) return;
+    if (!dataLoteInicio) return;
     setLoadingLote(true);
     setClientesLote(null);
-    const clientes = await getClientesByData(dataLote);
+    const clientes = await getClientesByData(dataLoteInicio, dataLoteFim || null);
     setClientesLote(clientes);
     setLoadingLote(false);
   };
 
   const handleAtualizarLote = async () => {
-    if (!dataLote || !clientesLote || clientesLote.length === 0) return;
+    if (!dataLoteInicio || !clientesLote || clientesLote.length === 0) return;
     if (!statusLote && !etapaLote && !novaDataLote) {
       setMessage({ text: 'Selecione ao menos um campo para atualizar.', type: 'error' });
       return;
@@ -298,12 +308,13 @@ const AdminArea = () => {
     if (statusLote) updates.status = statusLote;
     if (etapaLote) updates.etapa = etapaLote;
     if (novaDataLote) updates.novaData = novaDataLote;
-    const success = await updateProcessosByData(dataLote, updates);
+    const success = await updateProcessosByData(dataLoteInicio, dataLoteFim || null, updates);
     setSavingLote(false);
     if (success) {
       setMessage({ text: `${clientesLote.length} cliente(s) atualizados com sucesso!`, type: 'success' });
       setClientesLote(null);
-      setDataLote('');
+      setDataLoteInicio('');
+      setDataLoteFim('');
       setStatusLote('');
       setEtapaLote('');
       setNovaDataLote('');
@@ -486,7 +497,7 @@ const AdminArea = () => {
           <Plus size={18} /> Cadastrar Novo
         </button>
         <button
-          onClick={() => { setActiveTab('lote'); setMessage({ text: '', type: '' }); setClientesLote(null); setDataLote(''); setStatusLote(''); setEtapaLote(''); setNovaDataLote(''); }}
+          onClick={() => { setActiveTab('lote'); setMessage({ text: '', type: '' }); setClientesLote(null); setDataLoteInicio(''); setDataLoteFim(''); setStatusLote(''); setEtapaLote(''); setNovaDataLote(''); }}
           style={{
             padding: '0.75rem 1.5rem',
             background: 'none',
@@ -831,23 +842,33 @@ const AdminArea = () => {
       {/* ABA ATUALIZAR EM LOTE */}
       {activeTab === 'lote' && (
         <div style={{ animation: 'fadeIn 0.3s ease' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Atualizar em Lote por Data</h2>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Atualizar em Lote por Período</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            Selecione uma data de cadastro para visualizar todos os clientes daquele dia e atualizar todos de uma vez.
+            Selecione uma data de início e término (ex: do dia 1º ao último dia do mês) para visualizar todos os clientes daquele período e atualizar todos de uma vez.
           </p>
 
-          {/* Seletor de data */}
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '2rem', maxWidth: '500px' }}>
-            <div className="input-group" style={{ flex: 1 }}>
-              <label className="input-label">Data de cadastro</label>
+          {/* Seletor de intervalo de datas */}
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '2rem', flexWrap: 'wrap' }}>
+            <div className="input-group" style={{ minWidth: '180px' }}>
+              <label className="input-label">Data de início</label>
               <input
                 type="date"
                 className="input-field"
-                value={dataLote}
-                onChange={(e) => { setDataLote(e.target.value); setClientesLote(null); }}
+                value={dataLoteInicio}
+                onChange={(e) => { setDataLoteInicio(e.target.value); setClientesLote(null); }}
               />
             </div>
-            <button className="btn-primary" onClick={handleBuscarPorData} disabled={!dataLote || loadingLote}>
+            <div className="input-group" style={{ minWidth: '180px' }}>
+              <label className="input-label">Data de término <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
+              <input
+                type="date"
+                className="input-field"
+                value={dataLoteFim}
+                min={dataLoteInicio}
+                onChange={(e) => { setDataLoteFim(e.target.value); setClientesLote(null); }}
+              />
+            </div>
+            <button className="btn-primary" onClick={handleBuscarPorData} disabled={!dataLoteInicio || loadingLote}>
               {loadingLote ? <RotateCw className="spinner" size={18} /> : <Search size={18} />}
               Buscar
             </button>
@@ -864,7 +885,7 @@ const AdminArea = () => {
               ) : (
                 <>
                   <div style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '0.5rem', color: '#1D4ED8', fontSize: '0.9rem' }}>
-                    <strong>{clientesLote.length} cliente(s)</strong> encontrados para <strong>{formatDate(dataLote)}</strong>. Defina o que deseja alterar e clique em Aplicar.
+                    <strong>{clientesLote.length} cliente(s)</strong> encontrados{dataLoteFim && dataLoteFim !== dataLoteInicio ? <> entre <strong>{formatDate(dataLoteInicio)}</strong> e <strong>{formatDate(dataLoteFim)}</strong></> : <> em <strong>{formatDate(dataLoteInicio)}</strong></>}. Defina o que deseja alterar e clique em Aplicar.
                   </div>
 
                   {/* Cards dos clientes */}
