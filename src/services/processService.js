@@ -232,36 +232,45 @@ export const getAllClientes = async () => {
   }
 };
 
-// Busca clientes únicos por intervalo de data_inicio (para preview do lote)
+// Busca clientes únicos por intervalo de data — igual ao agrupamento do dashboard
+// (usa data_inicio quando existe, senão cai para atualizado_em)
 export const getClientesByData = async (dateInicio, dateFim = null) => {
+  const fim = dateFim || dateInicio;
   try {
-    let query = supabase
+    // Query 1: clientes com data_inicio no intervalo
+    const { data: d1, error: e1 } = await supabase
       .from('processos')
       .select('documento, nome_cliente, etapa')
       .gte('data_inicio', dateInicio)
-      .lte('data_inicio', dateFim || dateInicio)
+      .lte('data_inicio', fim)
       .limit(10000);
 
-    const { data, error } = await query;
+    if (e1) { console.error('Erro query data_inicio:', e1); return []; }
 
-    if (error) {
-      console.error('Erro ao buscar clientes por data:', error);
-      return [];
-    }
+    // Query 2: clientes sem data_inicio mas com atualizado_em no intervalo
+    const { data: d2, error: e2 } = await supabase
+      .from('processos')
+      .select('documento, nome_cliente, etapa')
+      .is('data_inicio', null)
+      .gte('atualizado_em', dateInicio)
+      .lte('atualizado_em', fim)
+      .limit(10000);
+
+    if (e2) { console.error('Erro query atualizado_em:', e2); return []; }
 
     const map = new Map();
-    data.forEach(item => {
+    [...(d1 || []), ...(d2 || [])].forEach(item => {
       if (!map.has(item.documento)) {
         map.set(item.documento, { documento: item.documento, nome_cliente: item.nome_cliente, etapa: item.etapa });
       }
     });
 
     const result = Array.from(map.values());
-    result.sort((a, b) => {
-      const nameA = (a.nome_cliente || a.documento).toLowerCase();
-      const nameB = (b.nome_cliente || b.documento).toLowerCase();
-      return nameA.localeCompare(nameB, 'pt-BR');
-    });
+    result.sort((a, b) =>
+      (a.nome_cliente || a.documento).toLowerCase().localeCompare(
+        (b.nome_cliente || b.documento).toLowerCase(), 'pt-BR'
+      )
+    );
     return result;
   } catch (error) {
     console.error('Erro inesperado:', error);
@@ -271,6 +280,7 @@ export const getClientesByData = async (dateInicio, dateFim = null) => {
 
 // Atualiza status e/ou etapa de todos os processos de um intervalo de datas
 export const updateProcessosByData = async (dateInicio, dateFim = null, updates) => {
+  const fim = dateFim || dateInicio;
   try {
     const payload = {};
     if (updates.status) payload.status = updates.status;
@@ -279,16 +289,25 @@ export const updateProcessosByData = async (dateInicio, dateFim = null, updates)
 
     if (Object.keys(payload).length === 0) return false;
 
-    const { error } = await supabase
+    // Atualiza clientes com data_inicio no intervalo
+    const { error: e1 } = await supabase
       .from('processos')
       .update(payload)
       .gte('data_inicio', dateInicio)
-      .lte('data_inicio', dateFim || dateInicio);
+      .lte('data_inicio', fim);
 
-    if (error) {
-      console.error('Erro ao atualizar em lote:', error);
-      return false;
-    }
+    if (e1) { console.error('Erro update data_inicio:', e1); return false; }
+
+    // Atualiza clientes sem data_inicio mas com atualizado_em no intervalo
+    const { error: e2 } = await supabase
+      .from('processos')
+      .update(payload)
+      .is('data_inicio', null)
+      .gte('atualizado_em', dateInicio)
+      .lte('atualizado_em', fim);
+
+    if (e2) { console.error('Erro update atualizado_em:', e2); return false; }
+
     return true;
   } catch (error) {
     console.error('Erro inesperado:', error);
