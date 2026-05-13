@@ -180,7 +180,8 @@ export const getAllClientes = async () => {
     const { data, error } = await supabase
       .from('processos')
       .select('documento, atualizado_em, nome_cliente, etapa, data_inicio')
-      .order('data_inicio', { ascending: false, nullsFirst: false });
+      .order('data_inicio', { ascending: false, nullsFirst: false })
+      .limit(10000);
 
     if (error) {
       console.error('Erro ao buscar todos os clientes:', error);
@@ -238,7 +239,8 @@ export const getClientesByData = async (dateInicio, dateFim = null) => {
       .from('processos')
       .select('documento, nome_cliente, etapa')
       .gte('atualizado_em', dateInicio)
-      .lte('atualizado_em', dateFim || dateInicio);
+      .lte('atualizado_em', dateFim || dateInicio)
+      .limit(10000);
 
     const { data, error } = await query;
 
