@@ -232,14 +232,14 @@ export const getAllClientes = async () => {
   }
 };
 
-// Busca clientes únicos por data ou intervalo de datas (para preview do lote)
+// Busca clientes únicos por intervalo de data_inicio (para preview do lote)
 export const getClientesByData = async (dateInicio, dateFim = null) => {
   try {
     let query = supabase
       .from('processos')
       .select('documento, nome_cliente, etapa')
-      .gte('atualizado_em', dateInicio)
-      .lte('atualizado_em', dateFim || dateInicio)
+      .gte('data_inicio', dateInicio)
+      .lte('data_inicio', dateFim || dateInicio)
       .limit(10000);
 
     const { data, error } = await query;
@@ -282,8 +282,8 @@ export const updateProcessosByData = async (dateInicio, dateFim = null, updates)
     const { error } = await supabase
       .from('processos')
       .update(payload)
-      .gte('atualizado_em', dateInicio)
-      .lte('atualizado_em', dateFim || dateInicio);
+      .gte('data_inicio', dateInicio)
+      .lte('data_inicio', dateFim || dateInicio);
 
     if (error) {
       console.error('Erro ao atualizar em lote:', error);

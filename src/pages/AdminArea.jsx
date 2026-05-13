@@ -850,7 +850,7 @@ const AdminArea = () => {
           {/* Seletor de intervalo de datas */}
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '2rem', flexWrap: 'wrap' }}>
             <div className="input-group" style={{ minWidth: '180px' }}>
-              <label className="input-label">Data de início</label>
+              <label className="input-label">Data de início do processo</label>
               <input
                 type="date"
                 className="input-field"
@@ -859,7 +859,7 @@ const AdminArea = () => {
               />
             </div>
             <div className="input-group" style={{ minWidth: '180px' }}>
-              <label className="input-label">Data de término <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
+              <label className="input-label">Data de término do processo <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
               <input
                 type="date"
                 className="input-field"
